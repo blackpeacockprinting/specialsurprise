@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Luca's Greatest Hits</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shrikhand&family=Karla:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.3/confetti.browser.min.js"></script>
+<style>
+/* Layout: a night sky with one record-album sleeve down the middle; the timeline is the tracklist */
+:root{
+  --sky:#0d1430; --sky-2:#18214a; --sleeve:#1f2a5c;
+  --lemon:#f6d548; --rose:#ef6f8e; --paper:#f3eee2; --muted:#a9b1d6; --line:rgba(243,238,226,.14);
+  --display:"Shrikhand", "Georgia", serif;
+  --body:"Karla", system-ui, sans-serif;
+  --mono:"DM Mono", ui-monospace, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--sky);color:var(--paper);font-family:var(--body);font-size:17px;line-height:1.6;overflow-x:hidden}
+#stars{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:48px 80px;display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{text-wrap:balance;margin:0}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+
+/* Hero */
+.hero{text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+.hero h1{font-family:var(--display);font-weight:400;font-size:clamp(44px,10vw,88px);line-height:1;color:var(--lemon)}
+.hero h1 span{display:block;color:var(--rose);font-size:.55em;margin-top:10px}
+.hero p{margin:0;color:var(--muted);max-width:34ch}
+.record{width:clamp(150px,36vw,220px);aspect-ratio:1;max-width:100%;border-radius:50%;
+  background:radial-gradient(circle at center,var(--lemon) 0 17%,#111 17.5% 19%,transparent 19.5%),
+  repeating-radial-gradient(circle at center,#151515 0 2px,#202020 2px 4px);
+  box-shadow:0 20px 60px rgba(0,0,0,.5);position:relative;animation:spin 6s linear infinite}
+.record::after{content:"LUCA · 27.10";position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:10px;color:var(--sky);letter-spacing:.1em}
+
+/* Countdown */
+.countdown{background:var(--sleeve);border:1px solid var(--line);border-radius:6px;padding:24px;text-align:center;display:flex;flex-direction:column;gap:12px}
+.cd-grid{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.cd-cell{min-width:72px}
+.cd-num{font-family:var(--display);font-size:40px;color:var(--lemon);line-height:1;font-variant-numeric:tabular-nums}
+.cd-lab{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+
+/* Tracklist */
+.side{display:flex;flex-direction:column;gap:20px}
+.side-head{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:8px;gap:12px;flex-wrap:wrap}
+.side-head h2{font-family:var(--display);font-weight:400;font-size:30px;color:var(--rose)}
+.track{display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:center}
+.photo{position:relative;aspect-ratio:1;max-width:100%;border:2px dashed var(--line);border-radius:4px;display:grid;place-items:center;color:var(--muted);font-family:var(--mono);font-size:12px;text-align:center;padding:12px;background:var(--sky-2)}
+.photo{border:6px solid var(--paper);border-bottom-width:28px;padding:0;background:var(--paper);box-shadow:0 14px 34px rgba(0,0,0,.4)}
+.photo img{width:100%;height:100%;object-fit:cover;display:block}
+.photo.multi{cursor:pointer}
+.photo .count{position:absolute;left:6px;bottom:-23px;font-family:var(--mono);font-size:11px;color:var(--sky)}
+.photo:focus-visible{outline:3px solid var(--lemon);outline-offset:3px}
+.thank img{width:96px;height:auto;max-width:100%;border:4px solid #fff;box-shadow:0 6px 16px rgba(0,0,0,.2);transform:rotate(-3deg);align-self:flex-start}
+.mini-disc{position:absolute;right:-14px;bottom:-14px;width:46px;height:46px;border-radius:50%;
+  background:radial-gradient(circle,var(--rose) 0 22%,#111 23% 26%,#1b1b1b 27%);animation:spin 3s linear infinite}
+.track-text{min-width:0;display:flex;flex-direction:column;gap:4px}
+.track-meta{display:flex;gap:12px;font-family:var(--mono);font-size:12px;color:var(--lemon);letter-spacing:.06em}
+.track h3{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.15}
+.track p{margin:0;color:var(--paper);opacity:.88;max-width:52ch}
+.de{display:block;color:var(--muted);font-style:italic;font-size:15px}
+
+/* Liner notes */
+.liner{background:var(--paper);color:var(--sky);border-radius:6px;padding-block:32px;padding-inline:clamp(20px,5vw,40px);display:flex;flex-direction:column;gap:22px}
+.liner h2{font-family:var(--display);font-weight:400;font-size:34px;color:var(--rose)}
+.liner .eyebrow{color:#59607f}
+.thanks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 28px}
+.thank{display:flex;flex-direction:column;gap:6px;min-width:0}
+.thank h3{font-family:var(--body);font-weight:700;font-size:18px;border-bottom:2px solid var(--lemon);padding-bottom:4px}
+.thank p{margin:0;font-size:16px}
+.thank .de{color:#59607f}
+@media (max-width:560px){.thanks{grid-template-columns:1fr}}
+
+/* Pun payback */
+.puns{display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center}
+.puns h2{font-family:var(--display);font-weight:400;font-size:34px;color:var(--lemon)}
+.puns > p{margin:0;max-width:46ch;color:var(--muted)}
+.pun-card{width:100%;max-width:460px;min-height:190px;background:var(--rose);color:#fff;border-radius:8px;padding:28px 24px;display:flex;flex-direction:column;justify-content:center;gap:10px;transform:rotate(1.5deg);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.pun-card .pun-num{font-family:var(--mono);font-size:12px;letter-spacing:.14em;opacity:.85}
+.pun-card .pun-text{font-family:var(--display);font-size:24px;line-height:1.25}
+.groan{width:100%;max-width:460px;display:flex;flex-direction:column;gap:6px}
+.groan-row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.groan-bar{height:10px;border-radius:999px;background:var(--sky-2);border:1px solid var(--line);overflow:hidden}
+.groan-fill{height:100%;width:0;background:linear-gradient(90deg,var(--lemon),var(--rose));transition:width .4s ease}
+
+/* Now playing */
+.now{display:flex;flex-direction:column;gap:12px}
+.songs{display:flex;gap:12px;flex-wrap:wrap}
+.song{flex:1 1 220px;display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:6px;color:var(--paper);text-decoration:none;background:var(--sleeve)}
+.song{font:inherit;text-align:left;cursor:pointer}
+.song:hover,.song:focus-visible{border-color:var(--lemon)}
+.song.on{border-color:var(--lemon);box-shadow:0 0 0 1px var(--lemon)}
+.song.on .dot{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.5)}}
+.song b{display:block}
+.song small{color:var(--muted);font-family:var(--mono);font-size:11px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--lemon);flex:none}
+
+/* Hidden track */
+.hidden-track{text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}
+.btn{font:700 16px var(--body);padding:14px 26px;border-radius:999px;border:0;cursor:pointer;background:var(--lemon);color:var(--sky)}
+.btn.ghost{background:transparent;color:var(--paper);border:1.5px solid var(--line)}
+.btn:focus-visible{outline:3px solid var(--rose);outline-offset:3px}
+.reveal{background:var(--paper);color:var(--sky);border-radius:6px;padding:28px 24px;max-width:480px;display:flex;flex-direction:column;gap:8px;transform:rotate(-1.5deg)}
+.reveal h3{font-family:var(--display);font-weight:400;font-size:30px;color:var(--rose)}
+.reveal p{margin:0}
+.reveal{max-width:640px;width:100%;transform:none;text-align:left}
+.coupons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.coupon{border:2px dashed var(--rose);border-radius:6px;padding:16px 14px;display:flex;flex-direction:column;gap:6px;min-width:0;background:#fff8f0}
+.coupon:nth-child(1){transform:rotate(-1.5deg)}.coupon:nth-child(3){transform:rotate(1.5deg)}
+.coupon b{font-size:17px;line-height:1.25}
+.coupon p{font-size:15px}
+.coupon .de{color:#59607f;font-size:14px}
+.c-num{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--rose)}
+.fine{font-family:var(--mono);font-size:12px;color:#59607f}
+@media (max-width:640px){.coupons{grid-template-columns:1fr}.coupon{transform:none!important}}
+
+footer{text-align:center;color:var(--muted);font-size:15px;display:flex;flex-direction:column;align-items:center;gap:10px}
+
+/* Forgiveness modal */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(8,11,28,.78);padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:24px}
+.card{background:var(--paper);color:var(--sky);border-radius:10px;padding:28px 24px;max-width:420px;width:100%;text-align:center;display:flex;flex-direction:column;gap:14px;box-shadow:0 30px 80px rgba(0,0,0,.5);animation:pop .5s ease-out}
+.card h2{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.15;color:var(--sky)}
+.card .de{color:#59607f}
+.card-btns{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;min-height:52px}
+#noBtn{background:var(--rose);color:#fff}
+#noBtn.runaway{position:fixed;z-index:60;transition:left .18s ease, top .18s ease}
+.taunt{font-family:var(--mono);font-size:12px;color:#59607f;min-height:1.2em}
+
+/* Music toggle */
+#musicBtn{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;width:56px;height:56px;border-radius:50%;border:0;cursor:pointer;
+  background:radial-gradient(circle,var(--lemon) 0 20%,#111 21% 24%,#1c1c1c 25%);box-shadow:0 8px 24px rgba(0,0,0,.45)}
+#musicBtn.playing{animation:spin 3s linear infinite}
+#musicBtn:focus-visible{outline:3px solid var(--rose);outline-offset:3px}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pop{from{transform:scale(.85);opacity:.3}to{transform:none;opacity:1}}
+@media (max-width:560px){.track{grid-template-columns:1fr}.photo{max-width:320px}.track h3{font-size:24px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<canvas id="stars" aria-hidden="true"></canvas>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle" hidden>
+  <div class="card">
+    <span class="eyebrow" style="color:#59607f">Wichtige Frage · Important question</span>
+    <h2 id="mTitle">Do you forgive me for missing your birthday?</h2>
+    <span class="de">Verzeihst du mir, dass ich deinen Geburtstag verpasse?</span>
+    <div class="card-btns">
+      <button class="btn" id="yesBtn">Ja! Yes!</button>
+      <button class="btn" id="noBtn">Nein</button>
+    </div>
+    <div class="taunt" id="taunt"></div>
+  </div>
+</div>
+
+<main class="wrap">
+  <header class="hero">
+    <div class="record" aria-hidden="true"></div>
+    <span class="eyebrow">27. Oktober 2026 · Limited Edition</span>
+    <h1>Happy Birthday, Luca!<span>Alles Gute zum Geburtstag</span></h1>
+    <p>Presenting the greatest album ever recorded: <b>Luca &amp; Trevor, The Greatest Hits.</b> Remastered, slightly scratched, still number one.</p>
+  </header>
+
+  <section class="countdown" aria-labelledby="cdTitle">
+    <span class="eyebrow" id="cdTitle">Bonus Track · "Coming Home" drops in</span>
+    <div class="cd-grid" id="cd">
+      <div class="cd-cell"><div class="cd-num" id="cdD">--</div><div class="cd-lab">Tage</div></div>
+      <div class="cd-cell"><div class="cd-num" id="cdH">--</div><div class="cd-lab">Stunden</div></div>
+      <div class="cd-cell"><div class="cd-num" id="cdM">--</div><div class="cd-lab">Minuten</div></div>
+      <div class="cd-cell"><div class="cd-num" id="cdS">--</div><div class="cd-lab">Sekunden</div></div>
+    </div>
+    <span class="de">Bis Papa endlich nach Hause kommt.</span>
+  </section>
+
+  <section class="side" aria-labelledby="sideA">
+    <div class="side-head"><h2 id="sideA">Side A</h2><span class="eyebrow">Germany · 2016–2020</span></div>
+
+    <article class="track">
+      <div class="photo"><span class="mini-disc"></span></div>
+      <div class="track-text">
+        <div class="track-meta"><span>Track 01</span><span>Germany</span></div>
+        <h3>Swiped Right</h3>
+        <p>Exhibit A: the actual Tinder photo. A redhead on a horse. Obviously I swiped right. To this day, I'm still not sure if you swiped right on me or if the horse did.</p>
+        <span class="de">Ein Match, das alles verändert hat.</span>
+      </div>
+    </article>
+
+    <article class="track">
+      <div class="photo"><span class="mini-disc"></span></div>
+      <div class="track-text">
+        <div class="track-meta"><span>Track 02</span><span>20.05.2016 → 2018</span></div>
+        <h3>Das erste Date</h3>
+        <p>No photo of our first date exists. Probably for the best. What matters is we both showed up and neither of us was a catfish. Then came Glühwein, mountains, and a lot of selfies.</p>
+        <span class="de">Unser erstes Date. Der Anfang von allem.</span>
+      </div>
+    </article>
+
+    <article class="track">
+      <div class="photo"><span class="mini-disc"></span></div>
+      <div class="track-text">
+        <div class="track-meta"><span>Track 03</span><span>07.07.2018</span></div>
+        <h3>Ja, ich will</h3>
+        <p>You said yes. In front of witnesses. It's legally binding, so no refunds and no exchanges. Lucky you.</p>
+        <span class="de">Der beste Tag meines Lebens.</span>
+      </div>
+    </article>
+
+    <article class="track">
+      <div class="photo"><span class="mini-disc"></span></div>
+      <div class="track-text">
+        <div class="track-meta"><span>Track 04</span><span>06.08.2020</span></div>
+        <h3>Little Man</h3>
+        <p>Our son arrives and immediately takes over the house, the schedule, and the remote. We never got any of it back.</p>
+        <span class="de">Unser kleiner Mann ist da.</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="side" aria-labelledby="sideB">
+    <div class="side-head"><h2 id="sideB">Side B</h2><span class="eyebrow">The world tour · 2021–2026</span></div>
+
+    <article class="track">
+      <div class="photo"><span class="mini-disc"></span></div>
+      <div class="track-text">
+        <div class="track-meta"><span>Track 05</span><span>2021 · Okinawa</span></div>
+        <h3>Sayonara, Germany</h3>
+        <p>We packed our entire life into boxes and moved to a tiny island in the middle of the Pacific. You only complained a little. Okay, a medium amount.</p>
+        <span class="de">Unser erstes großes Abenteuer zusammen.</span>
+      </div>
+    </article>
+
+    <article class="track">
+      <div class="photo"><span class="mini-disc"></span></div>
+      <div class="track-text">
+        <div class="track-meta"><span>Track 06</span><span>05.12.2023</span></div>
+        <h3>Little Lady</h3>
+        <p>Our daughter shows up, and Dad arrives at the big moment on one working knee. You did all the actual hard work, as usual, and somehow still took care of both of us. Now the small people outnumber us.</p>
+        <span class="de">Unsere kleine Prinzessin ist da.</span>
+      </div>
+    </article>
+
+    <article class="track">
+      <div class="photo"><span class="mini-disc"></span></div>
+      <div class="track-text">
+        <div class="track-meta"><span>Track 07</span><span>2026 · Korea</span></div>
+        <h3>Long Distance Dedication</h3>
+        <p>About 8,000 km apart. You've been running the whole house, the kids, and everything else while I'm gone. You're the real MVP of this album.</p>
+        <span class="de">Ich vermisse dich jeden Tag.</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="liner" aria-labelledby="linerTitle">
+    <span class="eyebrow">Liner Notes · Danksagung</span>
+    <h2 id="linerTitle">Special thanks to Luca, for&nbsp;everything</h2>
+    <div class="thanks">
+      <div class="thank">
+        <h3>For following me around the world</h3>
+        <p>You packed up your whole life more than once and followed a guy in uniform wherever the Air Force felt like sending us. You never signed the orders, but you showed up for every single one.</p>
+        <span class="de">Danke, dass du mir überallhin folgst.</span>
+      </div>
+      <div class="thank">
+        <h3>For being my best friend</h3>
+        <p>You're the first person I want to tell everything to. The good news, the bad news, and the "you won't believe what happened at work today" news. Best friend I've ever had, hands down.</p>
+        <span class="de">Du bist meine beste Freundin.</span>
+      </div>
+      <div class="thank">
+        <img src="photos/career-stripes.jpg" alt="Trevor pointing proudly at his new Staff Sergeant stripes">
+        <h3>For supporting my career</h3>
+        <p>Every late shift, every PCS, every "sorry, I have to go in." You held everything together so I could do my job. Every stripe on my sleeve has a little bit of you in it.</p>
+        <span class="de">Danke, dass du immer hinter mir stehst.</span>
+      </div>
+      <div class="thank">
+        <h3>For every terrible pun card</h3>
+        <p>Every year you hand me a card full of puns so bad they're good. I've been taking notes. This year, the tables have turned. Scroll down and brace yourself.</p>
+        <span class="de">Jetzt bin ich dran.</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="puns" aria-labelledby="punTitle">
+    <span class="eyebrow">Revenge Track · Die Rache</span>
+    <h2 id="punTitle">The Pun Card Payback</h2>
+    <p>Years of your pun cards, repaid in full, with interest. Keep clicking. It only gets worse.</p>
+    <div class="pun-card" aria-live="polite">
+      <span class="pun-num" id="punNum">PUN 1 OF 10</span>
+      <span class="pun-text" id="punText">You're my all-time favorite track. I'd never skip you.</span>
+    </div>
+    <div class="groan">
+      <div class="groan-row"><span>Groan-o-meter</span><span id="groanLab">Mild eye roll</span></div>
+      <div class="groan-bar"><div class="groan-fill" id="groanFill"></div></div>
+    </div>
+    <button class="btn" id="punBtn">Next pun, bitte</button>
+  </section>
+
+  <section class="now" aria-labelledby="nowTitle">
+    <span class="eyebrow" id="nowTitle">Now playing · Luca's favorites</span>
+    <div class="songs">
+      <button class="song" data-track="lemon"><span class="dot"></span><span><b>Lemon Tree</b><small data-idle="Fools Garden · tap to play">Fools Garden · tap to play</small></span></button>
+      <button class="song" data-track="luka"><span class="dot" style="background:var(--rose)"></span><span><b>Luka</b><small data-idle="Suzanne Vega · basically your theme song">Suzanne Vega · basically your theme song</small></span></button>
+    </div>
+  </section>
+
+  <section class="hidden-track" aria-labelledby="htTitle">
+    <span class="eyebrow" id="htTitle">There's a hidden track on this album</span>
+    <button class="btn" id="hiddenBtn" aria-expanded="false" aria-controls="reveal">Play the hidden track</button>
+    <div class="reveal" id="reveal" hidden>
+      <span class="eyebrow" style="color:#59607f">Hidden Track · Deine Gutscheine</span>
+      <h3>Three coupons, redeemable when I'm home</h3>
+      <div class="coupons">
+        <div class="coupon">
+          <span class="c-num">Gutschein 01</span>
+          <b>Dinner by Chef Trevor</b>
+          <p>I cook, you relax. Feet up, glass of wine, zero dishes. The smoke detector has been notified.</p>
+          <span class="de">Ein Abendessen, nur von mir gekocht.</span>
+        </div>
+        <div class="coupon">
+          <span class="c-num">Gutschein 02</span>
+          <b>One massage, strictly professional</b>
+          <p>A full massage. No funny business. Hands stay where they belong. Pinky swear.</p>
+          <span class="de">Eine Massage. Ganz seriös. Versprochen.</span>
+        </div>
+        <div class="coupon">
+          <span class="c-num">Gutschein 03</span>
+          <b>Sappy TV night, your pick</b>
+          <p>Any show you want, as sappy as you want. No complaining, no phone, no "wait, who's that guy?" If I cry, it stays between us.</p>
+          <span class="de">Du suchst aus. Ich jammere nicht.</span>
+        </div>
+      </div>
+      <span class="fine">Fine print: valid when I'm home. No expiration date. Cannot be transferred to the kids.</span>
+    </div>
+  </section>
+
+  <footer>
+    <svg width="40" height="56" viewBox="0 0 40 56" aria-hidden="true">
+      <path d="M20 54 V26" stroke="#6fbf7f" stroke-width="2.5" fill="none"/>
+      <path d="M20 40 q-10 -4 -12 -12 q9 1 12 9" fill="#6fbf7f"/>
+      <circle cx="20" cy="18" r="10" fill="#ef6f8e"/>
+      <path d="M13 16 q7 -10 14 0 q-7 6 -14 0z" fill="#d9536f"/>
+    </svg>
+    <span>Of all the stars out there, you're my favorite one.</span>
+    <span class="de">Von allen Sternen bist du mein liebster. Ich liebe dich. · Trevor</span>
+  </footer>
+</main>
+
+<button id="musicBtn" aria-label="Play or pause music" title="Lemon Tree"></button>
+
+<script>
+// ---- Starry sky ----
+(function(){
+  const c=document.getElementById('stars'),x=c.getContext('2d');let s=[];
+  function size(){c.width=innerWidth*devicePixelRatio;c.height=innerHeight*devicePixelRatio;
+    s=Array.from({length:140},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:(Math.random()*1.4+.3)*devicePixelRatio,p:Math.random()*6}))}
+  size();addEventListener('resize',size);
+  const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function draw(t){x.clearRect(0,0,c.width,c.height);
+    for(const a of s){x.globalAlpha=.35+.65*Math.abs(Math.sin(t/1400+a.p));x.fillStyle='#f3eee2';x.beginPath();x.arc(a.x,a.y,a.r,0,7);x.fill()}
+    if(!still)requestAnimationFrame(draw)}
+  requestAnimationFrame(draw);
+})();
+
+// ---- Confetti ----
+function boom(big){
+  if(typeof confetti!=='function')return;
+  const colors=['#f6d548','#ef6f8e','#f3eee2','#7fb6ff'];
+  confetti({particleCount:big?160:90,spread:big?110:80,origin:{y:.35},colors});
+  setTimeout(()=>{confetti({particleCount:70,angle:60,spread:60,origin:{x:0,y:.6},colors});
+    confetti({particleCount:70,angle:120,spread:60,origin:{x:1,y:.6},colors})},250);
+}
+addEventListener('load',()=>{boom(true);setTimeout(()=>{document.getElementById('modal').hidden=false;document.getElementById('yesBtn').focus()},2200)});
+
+// ---- Runaway "No" button ----
+const no=document.getElementById('noBtn'),taunt=document.getElementById('taunt');
+const lines=['Nö.','Netter Versuch.','Nice try.','Too slow!','Haha, nope.','Gib einfach auf.','Just click yes.','Ich bin schneller.'];
+let n=0;
+function flee(e){
+  if(e)e.preventDefault();
+  const r=no.getBoundingClientRect(),m=20;
+  no.classList.add('runaway');
+  let nx,ny,tries=0;
+  do{nx=m+Math.random()*(innerWidth-r.width-2*m);ny=m+Math.random()*(innerHeight-r.height-2*m);tries++}
+  while(Math.hypot(nx-r.left,ny-r.top)<150&&tries<20);
+  no.style.left=nx+'px';no.style.top=ny+'px';
+  taunt.textContent=lines[n++%lines.length];
+}
+no.addEventListener('pointerenter',flee);
+no.addEventListener('pointerdown',flee);
+no.addEventListener('touchstart',flee,{passive:false});
+no.addEventListener('focus',flee);
+no.addEventListener('click',flee);
+
+// ---- Music ----
+const TRACKS={lemon:'music/lemon-tree.mp3',luka:'music/luka.mp3'};
+const audio=new Audio(TRACKS.lemon);audio.loop=true;let current='lemon';
+const mb=document.getElementById('musicBtn');
+const songBtns=document.querySelectorAll('.song[data-track]');
+function paint(){
+  const on=!audio.paused;mb.classList.toggle('playing',on);
+  songBtns.forEach(b=>{const me=on&&b.dataset.track===current;b.classList.toggle('on',me);
+    const s=b.querySelector('small');s.textContent=me?'Now playing · tap to pause':s.dataset.idle});
+}
+audio.addEventListener('play',paint);audio.addEventListener('pause',paint);
+function play(name){
+  if(name&&name!==current){current=name;audio.src=TRACKS[name]}
+  audio.play().catch(()=>{});
+}
+mb.addEventListener('click',()=>{audio.paused?play():audio.pause()});
+songBtns.forEach(b=>b.addEventListener('click',()=>{
+  const t=b.dataset.track;
+  if(t===current&&!audio.paused)audio.pause();else play(t);
+}));
+
+document.getElementById('yesBtn').addEventListener('click',()=>{
+  document.getElementById('modal').hidden=true;no.classList.remove('runaway');no.style.left=no.style.top='';
+  boom(false);play('lemon');
+});
+
+// ---- Countdown: home on 1 Dec 2026 ----
+const HOME=new Date('2026-12-01T12:00:00+01:00');
+function tick(){
+  let d=Math.max(0,HOME-new Date());
+  const D=Math.floor(d/864e5),H=Math.floor(d/36e5)%24,M=Math.floor(d/6e4)%60,S=Math.floor(d/1e3)%60;
+  cdD.textContent=D;cdH.textContent=String(H).padStart(2,'0');cdM.textContent=String(M).padStart(2,'0');cdS.textContent=String(S).padStart(2,'0');
+}
+tick();setInterval(tick,1000);
+
+// ---- Track photos (tap to flip) ----
+const TRACK_PHOTOS=[
+  [['01-horse','Luca hugging a black horse in the snow']],
+  [['02-selfie','An early selfie of Luca and Trevor'],['02-gluehwein','Glühwein at the Christmas market'],['02-wheat','Luca and Trevor in a wheat field'],['02-alps','Selfie in the mountains with a big spotted dog']],
+  [['03-wedding','Black-and-white wedding photo']],
+  [['04-popsicle','Our son, covered head to toe in ice cream'],['04-pregnant','Selfie with Luca pregnant'],['04-baby','Luca and Trevor holding their newborn son'],['04-playground','Trevor holding his little son\'s hand at a playground']],
+  [['05-beach','Family on the beach in Okinawa at sunset']],
+  [['06-siblings','Big brother holding his new baby sister'],['06-knee','Trevor\'s leg in a knee brace']],
+  [['07-family','The whole family together']]
+];
+document.querySelectorAll('.track .photo').forEach((box,i)=>{
+  const set=TRACK_PHOTOS[i];if(!set)return;let k=0;
+  const img=new Image();img.alt=set[0][1];img.src='photos/'+set[0][0]+'.jpg';box.prepend(img);
+  if(set.length>1){
+    box.classList.add('multi');box.tabIndex=0;box.setAttribute('role','button');box.setAttribute('aria-label','Next photo');
+    const c=document.createElement('span');c.className='count';box.append(c);
+    const upd=()=>{img.src='photos/'+set[k][0]+'.jpg';img.alt=set[k][1];c.textContent=(k+1)+' / '+set.length+' · tap'};
+    upd();
+    const next=()=>{k=(k+1)%set.length;upd()};
+    box.addEventListener('click',next);
+    box.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();next()}});
+  }
+});
+
+// ---- Pun payback ----
+const puns=[
+  "Life gave me lemons. Then it gave me you. Massive upgrade.",
+  "You make my heart skip a beat. Like a scratched record. Please don't return me.",
+  "Our love is like the Deutsche Bahn. Sometimes delayed, but it always gets there.",
+  "Ich liebe dich mehr als Deutsche ihr Brot lieben. And that is a LOT of Brot.",
+  "You're the Beatles to my... no, wait. You're the whole band. I'm the guy selling T-shirts outside.",
+  "I'd follow you to the ends of the earth. Oh wait, you're the one who keeps doing that for me.",
+  "I've done a lot of PCS moves, but I will never move on from you.",
+  "Long distance? Please. I'm 6'3\". I can basically see Germany from here.",
+  "I checked every star and every asteroid up there. You're still my favorite planet.",
+  "You've survived years of my bad jokes. I don't deserve you. I'm keeping you anyway."
+];
+const groans=['Mild eye roll','Audible sigh','Full eye roll','Head shake','Facepalm','Double facepalm','"Trevor, nein."','Considering divorce','Calling her mother','Maximum groan achieved'];
+let pi=0;
+function showPun(){
+  punNum.textContent='PUN '+(pi+1)+' OF '+puns.length;
+  punText.textContent=puns[pi];
+  groanFill.style.width=((pi+1)/puns.length*100)+'%';
+  groanLab.textContent=groans[pi];
+}
+showPun();
+punBtn.addEventListener('click',()=>{
+  pi=(pi+1)%puns.length;showPun();
+  if(pi===puns.length-1){punBtn.textContent='Start over (if you dare)';boom(false)}
+  else punBtn.textContent='Next pun, bitte';
+});
+
+// ---- Hidden track ----
+const hb=document.getElementById('hiddenBtn'),rv=document.getElementById('reveal');
+hb.addEventListener('click',()=>{rv.hidden=false;hb.hidden=true;hb.setAttribute('aria-expanded','true');boom(false)});
+</script>
+
+</body>
+</html>
